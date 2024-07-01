@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Text Analyzer with Character Limit</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .text-area-container {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .editable-div {
+            width: 60%;
+            height: 100px;
+            margin-right: 20px;
+            border: 1px solid #ccc;
+            padding: 5px;
+            overflow-y: auto;
+        }
+        .count-info {
+            font-size: 0.9em;
+            color: #333;
+            width: 40%;
+        }
+        #result {
+            margin-top: 20px;
+        }
+        #charLimit {
+            width: 100px;
+            margin-bottom: 10px;
+        }
+        .over-limit {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>Advanced Text Analyzer with Character Limit</h1>
+    <label for="charLimit">Character Limit: </label>
+    <input type="number" id="charLimit" min="1" oninput="updateAllCounts()">
+    <div class="text-area-container">
+        <div id="text1" class="editable-div" contenteditable="true" oninput="updateCount(this, 'count1')"></div>
+        <div id="count1" class="count-info"></div>
+    </div>
+    <div class="text-area-container">
+        <div id="text2" class="editable-div" contenteditable="true" oninput="updateCount(this, 'count2')"></div>
+        <div id="count2" class="count-info"></div>
+    </div>
+    <div class="text-area-container">
+        <div id="text3" class="editable-div" contenteditable="true" oninput="updateCount(this, 'count3')"></div>
+        <div id="count3" class="count-info"></div>
+    </div>
+    <div id="result"></div>
+
+    <script>
+        function updateCount(div, countId) {
+            const text = div.innerText;
+            const withSpaces = text.length;
+            const withoutSpaces = text.replace(/\s/g, '').length;
+            const words = text.trim().split(/\s+/).filter(word => word.length > 0).length;
+            const lines = text.split(/\r\n|\r|\n/).length;
+
+            const charLimit = parseInt(document.getElementById('charLimit').value) || 0;
+            const overLimit = withSpaces - charLimit;
+            const percentageOfLimit = charLimit > 0 ? (withSpaces / charLimit * 100).toFixed(2) : 'N/A';
+
+            let limitInfo = '';
+            if (charLimit > 0) {
+                limitInfo = overLimit > 0 
+                    ? `<br>Over limit: ${overLimit} characters (${percentageOfLimit}%)`
+                    : `<br>Under limit: ${-overLimit} characters (${percentageOfLimit}%)`;
+            }
+
+            document.getElementById(countId).innerHTML = `
+                Characters (with spaces): ${withSpaces}<br>
+                Characters (without spaces): ${withoutSpaces}<br>
+                Words: ${words}<br>
+                Lines: ${lines}
+                ${limitInfo}
+            `;
+
+            // Color coding for over-limit text
+            if (charLimit > 0 && withSpaces > charLimit) {
+                const range = document.createRange();
+                const selection = window.getSelection();
+                range.setStart(div.firstChild, charLimit);
+                range.setEnd(div.firstChild, withSpaces);
+                selection.removeAllRanges();
+                selection.addRange(range);
+                document.execCommand('foreColor', false, 'red');
+                selection.removeAllRanges();
+            } else {
+                div.style.color = 'black';
+            }
+
+            updateResult();
+        }
+
+        function updateAllCounts() {
+            for (let i = 1; i <= 3; i++) {
+                updateCount(document.getElementById(`text${i}`), `count${i}`);
+            }
+        }
+
+        function updateResult() {
+            const counts = [1, 2, 3].map(i => ({
+                chars: document.getElementById(`text${i}`).innerText.length,
+                words: document.getElementById(`text${i}`).innerText.trim().split(/\s+/).filter(word => word.length > 0).length
+            }));
+
+            let result = "<h2>Comparison:</h2>";
+
+            for (let i = 0; i < counts.length; i++) {
+                for (let j = i + 1; j < counts.length; j++) {
+                    const charDiff = counts[j].chars - counts[i].chars;
+                    const charPercentage = counts[i].chars > 0 ? (counts[j].chars / counts[i].chars * 100).toFixed(2) : 'N/A';
+                    const wordDiff = counts[j].words - counts[i].words;
+                    const wordPercentage = counts[i].words > 0 ? (counts[j].words / counts[i].words * 100).toFixed(2) : 'N/A';
+
+                    result += `<p><strong>Text ${j + 1} vs Text ${i + 1}:</strong><br>`;
+                    result += `Characters: ${Math.abs(charDiff)} ${charDiff >= 0 ? 'more' : 'fewer'} (${charPercentage}%)<br>`;
+                    result += `Words: ${Math.abs(wordDiff)} ${wordDiff >= 0 ? 'more' : 'fewer'} (${wordPercentage}%)</p>`;
+                }
+            }
+
+            document.getElementById('result').innerHTML = result;
+        }
+    </script>
+</body>
+</html>
